@@ -1,5 +1,4 @@
 node_modules
-package-lock.json
 composer.phar
 composer.lock
 .env.*.php
@@ -27,3 +26,7 @@ public/views/build
 
 public/uploads/*
 !public/uploads/.gitkeep
+/.nyc_output
+/coverage/
+
+.vscode/settings.json

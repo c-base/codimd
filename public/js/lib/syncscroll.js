@@ -7,6 +7,8 @@ import markdownitContainer from 'markdown-it-container'
 import { md } from '../extra'
 import modeType from './modeType'
 import appState from './appState'
+import { renderCSVPreview } from './renderer/csvpreview'
+import { parseFenceCodeParams } from './markdown/utils'
 
 function addPart (tokens, idx) {
   if (tokens[idx].map && tokens[idx].level === 0) {
@@ -26,6 +28,11 @@ md.renderer.rules.blockquote_open = function (tokens, idx, options, env, self) {
 md.renderer.rules.table_open = function (tokens, idx, options, env, self) {
   addPart(tokens, idx)
   return self.renderToken(...arguments)
+}
+const defaultImageRender = md.renderer.rules.image
+md.renderer.rules.image = function (tokens, idx, options, env, self) {
+  tokens[idx].attrJoin('class', 'md-image')
+  return defaultImageRender(...arguments)
 }
 md.renderer.rules.bullet_list_open = function (tokens, idx, options, env, self) {
   addPart(tokens, idx)
@@ -66,6 +73,18 @@ md.renderer.rules.fence = (tokens, idx, options, env, self) => {
 
   if (info) {
     langName = info.split(/\s+/g)[0]
+
+    if (langName === 'csvpreview') {
+      const params = parseFenceCodeParams(info)
+      let attr = ''
+      if (tokens[idx].map && tokens[idx].level === 0) {
+        const startline = tokens[idx].map[0] + 1
+        const endline = tokens[idx].map[1]
+        attr = `class="part" data-startline="${startline}" data-endline="${endline}"`
+      }
+      return renderCSVPreview(token.content, params, attr)
+    }
+
     if (/!$/.test(info)) token.attrJoin('class', 'wrap')
     token.attrJoin('class', options.langPrefix + langName.replace(/=$|=\d+$|=\+$|!$|=!/, ''))
     token.attrJoin('class', 'hljs')
@@ -73,7 +92,7 @@ md.renderer.rules.fence = (tokens, idx, options, env, self) => {
   }
 
   if (options.highlight) {
-    highlighted = options.highlight(token.content, langName) || md.utils.escapeHtml(token.content)
+    highlighted = options.highlight(token.content, info) || md.utils.escapeHtml(token.content)
   } else {
     highlighted = md.utils.escapeHtml(token.content)
   }
@@ -110,6 +129,31 @@ md.use(markdownitContainer, 'success', { render: renderContainer })
 md.use(markdownitContainer, 'info', { render: renderContainer })
 md.use(markdownitContainer, 'warning', { render: renderContainer })
 md.use(markdownitContainer, 'danger', { render: renderContainer })
+md.use(markdownitContainer, 'spoiler', {
+  validate: function (params) {
+    return params.trim().match(/^spoiler(\s+.*)?$/)
+  },
+  render: function (tokens, idx) {
+    const m = tokens[idx].info.trim().match(/^spoiler(\s+.*)?$/)
+
+    if (tokens[idx].nesting === 1) {
+      // opening tag
+      const startline = tokens[idx].map[0] + 1
+      const endline = tokens[idx].map[1]
+
+      const partClass = `class="part raw" data-startline="${startline}" data-endline="${endline}"`
+      const summary = m[1] && m[1].trim()
+      if (summary) {
+        return `<details ${partClass}><summary>${md.renderInline(summary)}</summary>\n`
+      } else {
+        return `<details ${partClass}>\n`
+      }
+    } else {
+      // closing tag
+      return '</details>\n'
+    }
+  }
+})
 
 window.preventSyncScrollToEdit = false
 window.preventSyncScrollToView = false
@@ -155,12 +199,12 @@ const buildMap = _.throttle(buildMapInner, buildMapThrottle)
 // Optimizations are required only for big texts.
 function buildMapInner (callback) {
   if (!viewArea || !markdownArea) return
-  let i, offset, nonEmptyList, pos, a, b, _lineHeightMap, linesCount, acc, _scrollMap
+  let i, pos, a, b, acc
 
-  offset = viewArea.scrollTop() - viewArea.offset().top
-  _scrollMap = []
-  nonEmptyList = []
-  _lineHeightMap = []
+  const offset = viewArea.scrollTop() - viewArea.offset().top
+  const _scrollMap = []
+  const nonEmptyList = []
+  const _lineHeightMap = []
   viewTop = 0
   viewBottom = viewArea[0].scrollHeight - viewArea.height()
 
@@ -181,14 +225,14 @@ function buildMapInner (callback) {
     acc += Math.round(h / lineHeight)
   }
   _lineHeightMap.push(acc)
-  linesCount = acc
+  const linesCount = acc
 
   for (i = 0; i < linesCount; i++) {
     _scrollMap.push(-1)
   }
 
   nonEmptyList.push(0)
-    // make the first line go top
+  // make the first line go top
   _scrollMap[0] = viewTop
 
   const parts = markdownArea.find('.part').toArray()
@@ -331,12 +375,12 @@ export function syncScrollToView (event, preventAnimate) {
   }
   if (viewScrolling) return
 
-  let lineNo, posTo
+  let posTo
   let topDiffPercent, posToNextDiff
   const scrollInfo = editor.getScrollInfo()
   const textHeight = editor.defaultTextHeight()
-  lineNo = Math.floor(scrollInfo.top / textHeight)
-    // if reach the last line, will start lerp to the bottom
+  const lineNo = Math.floor(scrollInfo.top / textHeight)
+  // if reach the last line, will start lerp to the bottom
   const diffToBottom = (scrollInfo.top + scrollInfo.clientHeight) - (scrollInfo.height - textHeight)
   if (scrollInfo.height > scrollInfo.clientHeight && diffToBottom > 0) {
     topDiffPercent = diffToBottom / textHeight

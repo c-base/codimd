@@ -1,6 +1,8 @@
 /* eslint-env browser, jquery */
-/* global filterXSS */
 // allow some attributes
+
+var filterXSS = require('xss')
+
 var whiteListAttr = ['id', 'class', 'style']
 window.whiteListAttr = whiteListAttr
 // allow link starts with '.', '/' and custom protocol with '://', exclude link starts with javascript://
@@ -10,27 +12,27 @@ var dataUriRegex = /^\s*data:([a-z]+\/[a-z0-9-+.]+(;[a-z-]+=[a-z0-9-]+)?)?(;base
 // custom white list
 var whiteList = filterXSS.whiteList
 // allow ol specify start number
-whiteList['ol'] = ['start']
+whiteList.ol = ['start']
 // allow li specify value number
-whiteList['li'] = ['value']
+whiteList.li = ['value']
 // allow style tag
-whiteList['style'] = []
+whiteList.style = []
 // allow kbd tag
-whiteList['kbd'] = []
+whiteList.kbd = []
 // allow ifram tag with some safe attributes
-whiteList['iframe'] = ['allowfullscreen', 'name', 'referrerpolicy', 'sandbox', 'src', 'width', 'height']
+whiteList.iframe = ['allowfullscreen', 'name', 'referrerpolicy', 'src', 'width', 'height']
 // allow summary tag
-whiteList['summary'] = []
+whiteList.summary = []
 // allow ruby tag
-whiteList['ruby'] = []
+whiteList.ruby = []
 // allow rp tag for ruby
-whiteList['rp'] = []
+whiteList.rp = []
 // allow rt tag for ruby
-whiteList['rt'] = []
+whiteList.rt = []
 // allow figure tag
-whiteList['figure'] = []
+whiteList.figure = []
 // allow figcaption tag
-whiteList['figcaption'] = []
+whiteList.figcaption = []
 
 var filterXSSOptions = {
   allowCommentTag: true,
@@ -42,8 +44,8 @@ var filterXSSOptions = {
   onIgnoreTag: function (tag, html, options) {
     // allow comment tag
     if (tag === '!--') {
-            // do not filter its attributes
-      return html
+      // do not filter its attributes
+      return html.replace(/<(?!!--)/g, '&lt;').replace(/-->/g, '__HTML_COMMENT_END__').replace(/>/g, '&gt;').replace(/__HTML_COMMENT_END__/g, '-->')
     }
   },
   onTagAttr: function (tag, name, value, isWhiteAttr) {
@@ -71,5 +73,6 @@ function preventXSS (html) {
 window.preventXSS = preventXSS
 
 module.exports = {
-  preventXSS: preventXSS
+  preventXSS: preventXSS,
+  escapeAttrValue: filterXSS.escapeAttrValue
 }

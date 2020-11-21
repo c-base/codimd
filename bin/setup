@@ -27,14 +27,14 @@ if [ ! -f .sequelizerc ]; then
   cp .sequelizerc.example .sequelizerc
 fi
 
-echo "install npm packages"
-BUILD_ASSETS=false npm install
+echo "install packages"
+npm install
 
 cat << EOF
 
 
 Edit the following config file to setup CodiMD server and client.
-Read more info at https://github.com/hackmdio/codimd#configuration-files
+Read more info at https://hackmd.io/c/codimd-documentation/%2Fs%2Fcodimd-configuration
 
 * config.json           -- CodiMD config
 * .sequelizerc          -- db config

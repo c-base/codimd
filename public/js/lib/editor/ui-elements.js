@@ -1,6 +1,7 @@
 /*
  *  Global UI elements references
  */
+/* global $ */
 
 export const getUIElements = () => ({
   spinner: $('.ui-spinner'),
@@ -67,7 +68,10 @@ export const getUIElements = () => ({
     codemirrorScroll: $('.ui-edit-area .CodeMirror .CodeMirror-scroll'),
     codemirrorSizer: $('.ui-edit-area .CodeMirror .CodeMirror-sizer'),
     codemirrorSizerInner: $(
-      '.ui-edit-area .CodeMirror .CodeMirror-sizer > div',
+      '.ui-edit-area .CodeMirror .CodeMirror-sizer > div'
+    ),
+    codemirrorLines: $(
+      '.ui-edit-area .CodeMirror .CodeMirror-lines'
     ),
     markdown: $('.ui-view-area .markdown-body'),
     resize: {
@@ -78,7 +82,8 @@ export const getUIElements = () => ({
   modal: {
     snippetImportProjects: $('#snippetImportModalProjects'),
     snippetImportSnippets: $('#snippetImportModalSnippets'),
-    revision: $('#revisionModal')
+    revision: $('#revisionModal'),
+    pandocExport: $('.pandoc-export-modal')
   }
 })
 
